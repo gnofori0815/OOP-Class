@@ -1,1 +1,448 @@
+``yaml
+id: 04-H02
+name: 04-H02
+title: 'Forced Study Guide'
+description: 'Work to help you study for first exam'
+category: Homework
+date_assigned: 2026-02-09 11:00
+date_due: 2026-02-23 11:00
+resources: []
+```
+# 
+�
+�
+ OOP Worksheet & Study Guide  
+### *Making Your Own Types Feel Like the Language Meant Them to Exist*
+### Due: 16 Feb 2026 by class time. 
+> If this feels long, good.  
+> If it feels unfinished, also good.  
+> If you feel like there’s “always more,” congratulations — that feeling is the curriculum.
+This document serves **three purposes**:
+1. Homework  
+2. Study guide  
+3. A mild personality test for how you think about software design  
+Read the questions carefully. Many are intentionally phrased to trip up *rote memorization*.--
+## Part 0 — A Necessary Reality Check
+Most people think:
+> **OOP = inheritance**
+That’s like saying:
+> **Math = long division**
+Inheritance exists.  
+It is sometimes useful.  
+It is wildly overused.
+This worksheet is about **building abstract data types (ADTs)** that behave like they belong in the 
+language — not about summoning class hierarchies like Pokémon.--
+# Part 1 — Review, But With Consequences
+## 
+1️⃣
+ 
 
+In modern CPUs, cache behavior often dominates theoretical complexity.
+1. Compare **array-based** vs **list-based** implementations of stacks and queues:- memory layout- resizing behavior- cache friendliness  
+(Yes, cache friendliness matters. No, you may not ignore it.)
+Stacks & Queues (ADT Reality Check)
+. Array-based vs List-based Stacks and Queues
+Memory Layout
+
+Array-based (e.g., std::vector, circular array):
+
+Elements stored in contiguous memory.
+
+No per-element pointer overhead.
+
+Fixed capacity (unless dynamically resized).
+
+List-based (e.g., std::list, linked list):
+
+Elements stored in non-contiguous memory.
+
+Each node stores data plus pointer(s) (next / prev).
+
+Memory allocated per element (heap fragmentation possible).
+
+Resizing Behavior
+
+Array-based:
+
+Requires resizing when capacity is exceeded.
+
+Typically uses geometric growth (e.g., doubling).
+
+Resize cost: O(n) copy/move.
+
+Amortized insertion at end: O(1).
+
+List-based:
+
+No resizing required.
+
+Each insertion allocates a new node.
+
+No large copy operations.
+
+Allocation overhead on every insert.
+
+Cache Friendliness (Yes, it matters)
+
+Array-based:
+
+Highly cache friendly.
+
+Spatial locality: adjacent elements are adjacent in memory.
+
+Fewer cache misses during traversal or repeated push/pop.
+
+Predictable memory access patterns → better CPU prefetching.
+
+List-based:
+
+Poor cache locality.
+
+Pointer chasing → frequent cache misses.
+
+Nodes may be scattered across memory.
+
+Significantly slower in practice despite similar Big-O.
+2. Why is `std::vector` a natural fit for a **stack**, but awkward for a **queue**?
+Perfect for a Stack (LIFO)
+
+Stack operations happen at one end.
+
+push_back() → O(1) amortized.
+
+pop_back() → O(1).
+
+Top element is at the end.
+
+No shifting required.
+
+Excellent cache locality.
+
+This maps exactly to stack behavior.
+
+Awkward for a Queue (FIFO)
+
+Queue needs:
+
+Insert at back.
+
+Remove from front.
+
+With std::vector:
+
+push_back() is fine.
+
+Removing front requires shifting all elements → O(n).
+
+Breaks performance expectations.
+
+You can simulate a queue with indices (circular buffer logic), but then you're manually managing what std::deque already handles better.
+
+Hence:
+
+vector aligns naturally with LIFO.
+
+FIFO fights the data layout
+
+3. Define the **invariant** for:- a stack  
+https://raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+1/7
+2/23/26, 1:45 PM
+raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md- a queue  
+> If your invariant takes more than one sentence, it’s not an invariant — it’s a confession.--
+answer:
+Stack Invariant
+The top always refers to the most recently inserted element, and all insertions and removals occur only at that position.
+
+Queue Invariant
+The front always refers to the earliest inserted element not yet removed, and elements are removed in the same order they were inserted.
+
+# Part 2 — Overloading vs Overriding  
+### (Same Word Root, Completely Different Beasts)
+## 
+2️⃣
+ Conceptual Distinction
+Fill out the table:
+| Feature               | Overloading | Overriding |
+| --------------------- | ----------- | ---------- |
+| Resolved at           | compile time          | runtime      |
+| Requires inheritance  | no                    | yes          |
+| Same function name    | yes                   | yes          |
+| Same parameter list   | no                    | yes          |
+| Polymorphism involved | static                | dynamic      |
+Then answer:
+
+1. Why is **overloading** a *compile-time convenience*?
+Because the compiler selects the correct function based solely on the parameter list at compile time, allowing multiple logically related functions to share the same name without adding new semantics to the type syste
+2. Why is **overriding** a *runtime contract*?
+Because a derived class promises to provide its own implementation of a base class function, and the function call is resolved at runtime through dynamic dispatch.
+3. Why do beginners confuse the two?
+because they use the same function name
+4. Why is that confusion dangerous?
+because Forgetting virtual leads to accidental overloading instead of overriding.
+> Hint: The compiler is not your therapist. It will not guess your intent.--
+# Part 3 — Constructors & Initialization Lists  
+### (Where C++ Stops Holding Your Hand)
+## 
+3️⃣
+ Initialization Lists or Else
+Given:
+```cpp
+class Widget {
+private:
+const int id;
+std::string name;
+public:
+Widget(int id, std::string name);
+};
+```
+Answer:
+1. Why **must** this constructor use an initialization list?
+Because id is const, and const data members must be initialized at the moment the object is constructed, not assigned afterward.
+2. What happens if you try to assign `id` inside the constructor body?
+Because by the time the constructor body executes, id has already been default-initialized, and const objects cannot be reassigned.
+3. Write the correct constructor.
+Widget::Widget(int id, std::string name)
+    : id(id), name(name)
+{
+}
+4. Name **one other situation** where initialization lists are required (research-lite).
+class Example {
+private:
+    int& ref;
+public:
+    Example(int& r) : ref(r) {}  // required
+};
+> Saying “because the compiler told me to” is not an explanation.--
+## 
+4️⃣
+ Copy Constructor vs Assignment Operator
+Research + reasoning required.
+https://raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+2/7
+2/23/26, 1:45 PM
+raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+1. When is the **copy constructor** invoked?
+Widget a(1, "A");
+Widget b = a;        // copy constructor
+Widget c(a);         // copy constructor
+
+2. When is the **assignment operator** invoked?
+Widget a(1, "A");
+Widget b(2, "B");
+
+b = a;   // assignment operator
+3. Why do both exist?
+Because construction and assignment are fundamentally different operations.
+4. What subtle bugs appear if you confuse them?
+> “They both copy stuff” earns partial credit and a sigh.--
+
+# Part 4 — `struct` vs `class`  
+### (Same Machine Code, Different Intent)
+## 
+5️⃣
+ Design Signal, Not Syntax Sugar
+Answer:
+1. What is the **only** language-level difference between `struct` and `class`?
+public and private
+2. Why does C++ even allow both?
+Plain data aggregates, Encapsulated behavioral types, Gradual abstraction
+3. When does choosing `struct` communicate intent *better* than `class`?
+A data aggregate, With public members, Minimal invariants, No ownership or behavioral complexity
+4. Why does intent matter more than syntax in large systems?--
+Because large systems are read far more than they are written.
+# Part 5 — Operator Overloading  
+### (Where ADTs Start Feeling Real)
+## 
+6️⃣
+ Rules You Don’t Get to Ignore
+Research and explain:
+1. Why can’t C++ overload:- `.`  - `::`  - `sizeof`
+Because they are compile-time structural operators, not behavioral ones.
+2. Why should `operator+` **not** mutate the left-hand operand?
+Because + represents value-producing addition, not mutation.
+3. Why is `operator<<` almost never a member function?
+Because the left operand is usually std::ostream.
+> If your answer is “because that’s how everyone does it,” dig deeper.--
+## 
+7️⃣
+ The “other / rhs” Trap (Yes, It’s Intentional)
+Given:
+```cpp
+Point operator+(const Point& rhs) const;
+```
+Answer clearly:
+1. Which object owns this function?
+The left-hand operand owns it.
+2. What does `rhs` represent?
+rhs stands for right-hand side.
+3. How can this function access `rhs.x` if `x` is private?
+Because privacy in C++ is enforced at the class level, not the object level
+4. What does this tell you about **class-level vs object-level access**?
+> This question exists specifically to break incorrect mental models.--
+C++ access control applies to types, not individual objects
+# Part 6 — `friend`: Controlled Violation of Privacy
+## 
+8️⃣
+ Friend or Design Smell?
+https://raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+3/7
+2/23/26, 1:45 PM
+raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+Answer:
+1. What does the `friend` keyword actually do?
+It grants a non-member function or another class access to private and protected members of a class.
+2. Why is `operator<<` commonly declared as a friend?
+It preserves correct operator direction while maintaining encapsulation elsewhere
+3. Why is excessive use of `friend` a red flag?
+Breaks encapsulation
+4. Give **one legitimate use case** and **one illegitimate one**.
+> “Because it wouldn’t compile otherwise” is not a justification — it’s a symptom.--
+Overloading operator<< for formatted output.
+# Part 7 — Core Programming Task  
+### *Design a Type, Not a School Assignment*
+## 
+9️⃣
+ Build a Native-Feeling `Point2D`
+You are designing a **type**, not checking boxes.
+### Required Features
+Your `Point2D` class must:- Use **private data members**- Include at least **three constructors**:- default- parameterized- copy constructor- Use **initialization lists**- Overload:- `+`- `-`- `==`- `!=` (without duplicating logic)- `<<`- Demonstrate **const correctness**- Avoid public getters unless you can justify them
+### Required Usage (This Must Compile)
+```cpp
+Point2D a(3, 4);
+Point2D b(1, 2);
+Point2D c = a + b;
+Point2D d = a - b;
+if (c == Point2D(4, 6)) {
+std::cout << "Math still works.\n";
+}
+std::cout << a << std::endl;
+```--
+#include <iostream>
+
+class Point2D {
+private:
+    double x;
+    double y;
+
+public:
+    // Default constructor
+    Point2D() : x(0.0), y(0.0) {}
+
+    // Parameterized constructor
+    Point2D(double x, double y) : x(x), y(y) {}
+
+    // Copy constructor
+    Point2D(const Point2D& other) : x(other.x), y(other.y) {}
+
+    // Addition
+    Point2D operator+(const Point2D& rhs) const {
+        return Point2D(x + rhs.x, y + rhs.y);
+    }
+
+    // Subtraction
+    Point2D operator-(const Point2D& rhs) const {
+        return Point2D(x - rhs.x, y - rhs.y);
+    }
+
+    // Equality
+    bool operator==(const Point2D& rhs) const {
+        return x == rhs.x && y == rhs.y;
+    }
+
+    // Inequality (no duplicated logic)
+    bool operator!=(const Point2D& rhs) const {
+        return !(*this == rhs);
+    }
+
+    // Stream output
+    friend std::ostream& operator<<(std::ostream& os, const Point2D& p) {
+        os << "(" << p.x << ", " << p.y << ")";
+        return os;
+    }
+};
+## 
+1️⃣0️⃣
+ Design Constraints (Read Carefully)
+You **may not**:- expose raw data publicly- use inheritance- overload operators with nonsense semantics
+You **should**:- minimize the public interface
+https://raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+4/7
+2/23/26, 1:45 PM
+raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md- make misuse difficult- prefer clarity over cleverness--
+# Part 8 — Composition (The Quiet MVP of OOP)
+## 
+1️⃣1️⃣
+ Composition in Plain English
+> **Composition means assembling behavior from parts, not becoming those parts.**
+Or more bluntly:
+> “Has-a” beats “is-a” most of the time.--
+## 
+1️⃣2️⃣
+ Inheritance vs Composition (No Dragons Yet)
+### 
+❌
+ Inheritance First Instinct
+```cpp
+class ColoredPoint : public Point2D {
+Color color;
+};
+```
+Problems:- Locked into `Point2D` forever- Inherits everything, wanted or not- Hard to evolve safely--
+### 
+✅
+ Composition Approach
+```cpp
+class ColoredPoint {
+private:
+Point2D position;
+Color color;
+};
+```
+Benefits:- Clearunintended side effects--
+## 
+1️⃣3️⃣
+ The Big Takeaway
+> **Inheritance expresses identity.  
+> Composition expresses capability.**
+Most real systems care more about **capability**.--
+# Part 9 — Reflection (Yes, This Is Graded)
+Answer honestly:
+https://raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+5/7
+2/23/26, 1:45 PM
+raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+1. Does your `Point2D` *feel* like a built-in type?
+Yes because it constructs simply
+2. What design choice most contributed to that feeling?
+Operators return new objects.
+3. Which OOP concept currently feels overhyped?
+4. Which one feels underrated?
+Invariant
+5. What part of this worksheet made you uncomfortable — and why?
+Why friend is dangerous
+If nothing made you uncomfortable, you probably didn’t push hard enough.--
+# 
+✅
+ Grading Rubric (100 Points)
+## Conceptual Understanding — 25 pts- Overloading vs Overriding: 10  - Constructors & Init Lists: 10  - Struct vs Class (intent-based): 5  
+## Operator Overloading Design — 25 pts- Semantic correctness: 10  - Const correctness: 5  - Member vs friend choice: 5  - Minimal interface: 5  
+## Class Design & Encapsulation — 25 pts- Private data: 10  - Constructor quality: 5  - Initialization lists: 5  - Friend usage justification: 5  
+## Code Quality — 15 pts- Compiles cleanly: 5  - Readability & naming: 5  - Comments explain *why*: 5  
+## Reflection & Judgment — 10 pts- Honest reflection: 5  - Insight into tradeoffs: 5  --
+# Final Instructor Note (Read This Twice)
+That feeling of:
+> “There’s always something else… another way… something deeper…”
+That’s not failure.  
+That’s **abstraction having no ceiling**.
+The goal is not perfection.  
+The goal is **better judgment**.
+## Deliverables- Make sure you have a folder called Assignments in your Github repo.- Create a folder in Assignments called H01 and place all of your documents in there. - Generate a pdf of your solution and have the entire worksheet not just uploaded to Github, but also 
+printed and brought to class Monday the 16th of February.  - This really is a study guide as we will have an exam the week of the 16th. - You have to use markdown to create your document. Why? It does syntax highlighting, and makes 
+writing documents easy. - [Markdown Getting Started](https://docs.github.com/en/get-started/writing-on-github/getting
+started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)- [Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Here-Cheatsheet)
+https://raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
+6/7
+2/23/26, 1:45 PM
+raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md- If you use code spaces or download VsCode, you can install plugins to let you convert markdown to 
+pdf, and to allow you to print directly from VsCode.
