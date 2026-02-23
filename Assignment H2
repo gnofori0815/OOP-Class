@@ -43,106 +43,51 @@ In modern CPUs, cache behavior often dominates theoretical complexity.
 Stacks & Queues (ADT Reality Check)
 . Array-based vs List-based Stacks and Queues
 Memory Layout
-
 Array-based (e.g., std::vector, circular array):
-
 Elements stored in contiguous memory.
-
 No per-element pointer overhead.
 
 Fixed capacity (unless dynamically resized).
-
 List-based (e.g., std::list, linked list):
-
 Elements stored in non-contiguous memory.
-
 Each node stores data plus pointer(s) (next / prev).
-
 Memory allocated per element (heap fragmentation possible).
-
 Resizing Behavior
 
 Array-based:
-
 Requires resizing when capacity is exceeded.
-
 Typically uses geometric growth (e.g., doubling).
-
 Resize cost: O(n) copy/move.
-
 Amortized insertion at end: O(1).
 
 List-based:
-
 No resizing required.
 
-Each insertion allocates a new node.
-
-No large copy operations.
-
-Allocation overhead on every insert.
-
-Cache Friendliness (Yes, it matters)
-
 Array-based:
-
 Highly cache friendly.
-
 Spatial locality: adjacent elements are adjacent in memory.
 
-Fewer cache misses during traversal or repeated push/pop.
-
-Predictable memory access patterns → better CPU prefetching.
-
 List-based:
-
 Poor cache locality.
-
-Pointer chasing → frequent cache misses.
-
-Nodes may be scattered across memory.
 
 Significantly slower in practice despite similar Big-O.
 2. Why is `std::vector` a natural fit for a **stack**, but awkward for a **queue**?
+
 Perfect for a Stack (LIFO)
-
 Stack operations happen at one end.
-
 push_back() → O(1) amortized.
-
 pop_back() → O(1).
-
 Top element is at the end.
-
 No shifting required.
-
 Excellent cache locality.
-
 This maps exactly to stack behavior.
-
 Awkward for a Queue (FIFO)
 
 Queue needs:
-
 Insert at back.
-
 Remove from front.
-
 With std::vector:
-
 push_back() is fine.
-
-Removing front requires shifting all elements → O(n).
-
-Breaks performance expectations.
-
-You can simulate a queue with indices (circular buffer logic), but then you're manually managing what std::deque already handles better.
-
-Hence:
-
-vector aligns naturally with LIFO.
-
-FIFO fights the data layout
 
 3. Define the **invariant** for:- a stack  
 https://raw.githubusercontent.com/rugbyprof/2143-Object-Oriented-Programming/refs/heads/master/Assignments/04-H02/README.md
